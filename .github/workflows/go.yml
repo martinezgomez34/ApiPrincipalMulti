@@ -31,6 +31,7 @@ jobs:
     - name: SendMessages
       run: |
         curl -H "Content-Type: application/json" \
-        -X POST \
-        -d "{\"\"content\":\"Nuevo  push en el repo por ${{github.actor}} e hizo un ${{github.action}} en el repositorio ${{github.repository}}\"}" \
-        "${{env.Discord}}"
+               -X POST \
+               -d "{\"content\": \"Nuevo push en el repositorio por ${{ github.actor }}: ${{ github.event.head_commit.message }} en el repositorio ${{github.repository}}\"}" \
+               "${{ env.Discord}}"
+        echo "Repositorio: $GITHUB_REPOSITORY"

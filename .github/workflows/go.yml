@@ -12,6 +12,8 @@ on:
 jobs:
 
   build:
+    env:
+      Discord: ${{secrets.DISCORD}}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -26,3 +28,10 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+    - name: SendMessages
+      run: |
+        curl -H "Content-Type: application/json" \
+        -X POST \
+        -d "{\"\"content\":\"Nuevo  push en el repo por ${{github.actor}} e hizo un ${{github.action}} en el repositorio ${{github.repository}}\"}" \
+        "${{env.Discord}}"
+        

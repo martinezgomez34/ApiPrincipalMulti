@@ -13,7 +13,7 @@ jobs:
 
   build:
     env:
-      Discord: ${{secrets.DISCORD}}
+      Discord: ${{secrets.DISCORD2}}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4

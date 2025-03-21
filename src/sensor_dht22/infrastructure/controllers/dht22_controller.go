@@ -2,14 +2,36 @@ package controller
 
 import (
 	"api/consumer"
+	"api/src/core"
 	"api/src/sensor_dht22/application"
 	"api/src/sensor_dht22/domain"
 	infraestructure "api/src/sensor_dht22/infrastructure"
 	"encoding/json"
 	"log"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string) {
+
+type SensorController struct {
+	service *application.SensorService
+}
+
+func NewSensorController(service *application.SensorService) *SensorController {
+	return &SensorController{service: service}
+}
+
+func (sc *SensorController) GetSensorData(c *gin.Context) {
+	sensorData, err := sc.service.GetSensorData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, sensorData)
+}
+
+func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string, db *core.Database) {
 	// Declarar la cola
 	_, err := rabbitMQ.DeclareQueue(queueName)
 	if err != nil {
@@ -22,8 +44,10 @@ func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string) {
 		log.Fatal("Error consumiendo mensajes:", err)
 	}
 
+	log.Println("Consumidor de RabbitMQ iniciado correctamente")
+
 	// Inicializar el repositorio y el servicio
-	repo := infraestructure.NewSensorRepository()
+	repo := infraestructure.NewSensorRepository(db.DB)
 	sensorService := application.NewSensorService(repo)
 
 	// Procesar mensajes
@@ -49,7 +73,7 @@ func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string) {
 				Status:      "Alerta",
 			}
 			publishNotification(rabbitMQ, notification)
-		} else if sensorData.Temperature < 10 {
+		} else if sensorData.Temperature < 25 {
 			emptyImage := "" // Cadena vacía
 			notification := domain.Message{
 				Header:      "Alerta de Temperatura",
@@ -72,7 +96,7 @@ func publishNotification(rabbitMQ *consumer.RabbitMQ, notification domain.Messag
 	}
 
 	// Publicar notificación en la cola
-	if err := rabbitMQ.PublishMessage("temperature_notifications", notificationJSON); err != nil {
+	if err := rabbitMQ.PublishMessage("temperature_messages", notificationJSON); err != nil {
 		log.Println("Error publicando notificación:", err)
 	}
 }

@@ -58,15 +58,20 @@ func (r *RabbitMQ) ConsumeMessages(queueName string) (<-chan amqp.Delivery, erro
 }
 
 func (r *RabbitMQ) PublishMessage(queueName string, body []byte) error {
-	return r.Channel.Publish(
-		"",        // exchange
-		queueName, // routing key
-		false,     // mandatory
-		false,     // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		})
+    err := r.Channel.Publish(
+        "",        // exchange
+        queueName, // routing key
+        false,     // mandatory
+        false,     // immediate
+        amqp.Publishing{
+            ContentType: "application/json",
+            Body:        body,
+        })
+    if err != nil {
+        return err
+    }
+    log.Printf("Mensaje publicado en la cola '%s'", queueName)
+    return nil
 }
 
 func (r *RabbitMQ) Close() {

@@ -13,3 +13,7 @@ func NewSensorService(repo domain.SensorRepository) *SensorService {
 func (s *SensorService) ProcessSensorData(data domain.SensorDHT22) error {
 	return s.repo.ProcessData(data)
 }
+
+func (s *SensorService) GetSensorData() ([]domain.SensorDHT22, error) {
+	return s.repo.GetSensorData()
+}

@@ -72,7 +72,7 @@ func publishNotification(rabbitMQ *consumer.RabbitMQ, notification domain.Messag
 	}
 
 	// Publicar notificación en la cola
-	if err := rabbitMQ.PublishMessage("notifications_queue", notificationJSON); err != nil {
+	if err := rabbitMQ.PublishMessage("temperature_notifications", notificationJSON); err != nil {
 		log.Println("Error publicando notificación:", err)
 	}
 }

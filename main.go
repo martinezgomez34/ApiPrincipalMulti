@@ -5,6 +5,7 @@ import (
 	"api/src/core"
 	controller "api/src/sensor_dht22/infrastructure/controllers"
 	route "api/src/sensor_dht22/infrastructure/routes"
+	routeBMP180 "api/src/sensor_bmp180/infrastructure/routes"
 	"log"
 	"time"
 
@@ -35,14 +36,17 @@ func main() {
 	}))
 	
 	route.SensorRoutes(router, db)
+	routeBMP180.SensorBMP180Routes(router, db)
 
 	// Nombre de la cola para el sensor DHT22
 	queueName := "dht22_queue"
+	queueBMP180 := "bmp180_queue"
 
 	// Iniciar consumidor del sensor DHT22
 	go controller.StartDHT22Consumer(rabbitMQ, queueName, db)
+	go consumer.StartBMP180Consumer(rabbitMQ, queueBMP180, db)
 
-	if err := router.Run(":8080"); err != nil {
+	if err := router.Run(":8082"); err != nil {
 		log.Fatal("Error iniciando el servidor HTTP:", err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"api/src/core"
 	"api/src/sensor_dht22/application"
 	"api/src/sensor_dht22/domain"
+	"api/src/sensor_dht22/infrastructure"
 	infraestructure "api/src/sensor_dht22/infrastructure"
 	"encoding/json"
 	"log"
@@ -31,7 +32,7 @@ func (sc *SensorController) GetSensorData(c *gin.Context) {
 	c.JSON(http.StatusOK, sensorData)
 }
 
-func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string, db *core.Database) {
+func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string, db *core.Database, wsClient *infrastructure.DhtClient) {
 	// Declarar la cola
 	_, err := rabbitMQ.DeclareQueue(queueName)
 	if err != nil {
@@ -60,25 +61,30 @@ func StartDHT22Consumer(rabbitMQ *consumer.RabbitMQ, queueName string, db *core.
 
 		// Procesar los datos del sensor
 		if err := sensorService.ProcessSensorData(sensorData); err != nil {
-			log.Println("Error procesando datos del sensor:", err)
+			log.Println("Error procesando datos del sensor dht22:", err)
 		}
+
+		// Enviar datos al WebSocket API
+        if err := wsClient.SendSensorData(sensorData); err != nil {
+            log.Println("Error enviando datos al WebSocket:", err)
+        }
 
 		// Crear y publicar notificaciones de eventos especiales
 		if sensorData.Temperature > 30 {
-			emptyImage := "" // Cadena vacía
+			emptyImage := "" 
 			notification := domain.Message{
 				Header:      "Alerta de Temperatura",
 				Description: "La temperatura es demasiado alta.",
-				Image:       &emptyImage, // Puntero a cadena vacía
+				Image:       &emptyImage, 
 				Status:      "Alerta",
 			}
 			publishNotification(rabbitMQ, notification)
 		} else if sensorData.Temperature < 25 {
-			emptyImage := "" // Cadena vacía
+			emptyImage := "" 
 			notification := domain.Message{
 				Header:      "Alerta de Temperatura",
 				Description: "La temperatura es demasiado baja.",
-				Image:       &emptyImage, // Puntero a cadena vacía
+				Image:       &emptyImage, 
 				Status:      "Alerta",
 			}
 			publishNotification(rabbitMQ, notification)
